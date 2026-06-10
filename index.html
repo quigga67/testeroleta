@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio de Nomes</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: #2f3542;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 36px;
+            text-align: center;
+        }
+
+        .conteudo-principal {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .bloco-roleta {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .roleta-container {
+            position: relative;
+            width: 450px;
+            height: 450px;
+            max-width: 90vw;
+            max-height: 90vw;
+        }
+
+        .seta {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #ff4757;
+            z-index: 10;
+        }
+
+        .roleta {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 6px solid #2f3542;
+            position: relative;
+            overflow: hidden;
+            transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            background: #ced6e0;
+        }
+
+        .fatia {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: center;
+        }
+
+        .fatia span {
+            position: absolute;
+            top: 45px; 
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        .caixa-participantes {
+            background-color: white;
+            border: 2px solid #ced6e0;
+            border-radius: 16px;
+            padding: 25px;
+            width: 320px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            align-self: flex-start;
+            margin-top: 10px;
+            max-height: 550px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .caixa-participantes h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #57606f;
+            border-bottom: 2px solid #f1f2f6;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .area-scroll {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 5px;
+            margin-bottom: 15px;
+        }
+
+        .item-participante {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            background-color: #f1f2f6;
+            border-radius: 8px;
+            padding: 4px 12px;
+            border: 2px solid transparent;
+        }
+
+        .item-participante::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 12px;
+            background-color: #2ed573;
+            flex-shrink: 0;
+        }
+
+        .input-nome {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 8px 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #2f3542;
+            text-transform: uppercase;
+            outline: none;
+        }
+
+        .btn-remover {
+            background: none;
+            border: none;
+            color: #ff4757;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+
+        .btn-adicionar {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #54a0ff;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-adicionar:hover { background-color: #2e86de; }
+
+        .item-participante.eliminado {
+            opacity: 0.4;
+            background-color: #dfe4ea;
+        }
+        .item-participante.eliminado::before { background-color: #ff4757; }
+        .item-participante.eliminado .input-nome { text-decoration: line-through; }
+
+        .btn-principal {
+            padding: 15px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            background-color: #2ed573;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-principal:hover { background-color: #26af5f; }
+        .btn-principal:active { transform: scale(0.98); }
+        .btn-principal:disabled { background-color: #ced6e0; cursor: not-allowed; }
+
+        /* Estilo do novo botão de reset */
+        .btn-reset {
+            padding: 10px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #57606f;
+            background-color: #dfe4ea;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-reset:hover { background-color: #ced6e0; color: #2f3542; }
+
+        #resultado {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2f3542;
+            min-height: 38px;
+            text-align: center;
+        }
+
+        @media (max-width: 850px) {
+            .conteudo-principal {
+                flex-direction: column;
+                gap: 30px;
+            }
+            
+            .caixa-participantes {
+                width: 100%;
+                max-width: 450px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .fatia span {
+                font-size: 13px;
+                top: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Roleta</h1>
+    
+    <div class="conteudo-principal">
+        
+        <div class="bloco-roleta">
+            <div class="roleta-container">
+                <div class="seta"></div>
+                <div class="roleta" id="roleta"></div>
+            </div>
+
+            <button id="btnGirar" class="btn-principal" onclick="girarRoleta()">Girar Roleta</button>
+            <button id="btnReset" class="btn-reset" onclick="resetarJogo()">Resetar Roleta</button>
+            <div id="resultado"></div>
+        </div>
+
+        <div class="caixa-participantes">
+            <h3 id="qtdParticipantes">Participantes (6)</h3>
+            
+            <div class="area-scroll">
+                <div class="lista-nomes" id="listaContainers">
+                    </div>
+            </div>
+
+            <button class="btn-adicionar" id="btnAdd" onclick="adicionarNovoInput()">+ Adicionar Nome</button>
+        </div>
+
+    </div>
+
+<script>
+    let listaNomes = ["Lucas", "Filipe", "Silva", "Lorenzo", "Vini", "André"];
+    
+    // 🎯 SUA SEQUÊNCIA SECRETA
+    const ordemDosVencedores = [2, 0, 4, 1, 3, 5]; 
+    
+    const coresfatias = ["#ff6b81", "#70a1ff", "#7bed9f", "#eccc68", "#ffa502", "#1e90ff", "#a29bfe", "#fd79a8", "#00cec9", "#fab1a0"];
+    
+    let voltasCompletas = 0;
+    let rodadaAtual = 0;
+    let indicesEliminados = []; 
+
+    construirListaInputs();
+
+    function construirListaInputs() {
+        const container = document.getElementById('listaContainers');
+        container.innerHTML = "";
+
+        listaNomes.forEach((nome, index) => {
+            const item = document.createElement('div');
+            item.className = "item-participante";
+            item.id = `container-${index}`;
+
+            const input = document.createElement('input');
+            input.type = "text";
+            input.className = "input-nome";
+            input.id = `input-${index}`;
+            input.value = nome;
+            input.oninput = atualizarRoleta;
+
+            const btnExcluir = document.createElement('button');
+            btnExcluir.className = "btn-remover";
+            btnExcluir.innerText = "✕";
+            btnExcluir.onclick = () => removerNome(index);
+
+            item.appendChild(input);
+            item.appendChild(btnExcluir);
+            container.appendChild(item);
+        });
+
+        atualizarRoleta();
+    }
+
+    function adicionarNovoInput() {
+        salvarNomesAtuais();
+        listaNomes.push(`Item ${listaNomes.length + 1}`);
+        construirListaInputs();
+        const scrollArea = document.querySelector('.area-scroll');
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+
+    function removerNome(index) {
+        if (listaNomes.length <= 2) {
+            alert("A roleta precisa de pelo menos 2 participantes!");
+            return;
+        }
+        salvarNomesAtuais();
+        listaNomes.splice(index, 1);
+        construirListaInputs();
+    }
+
+    function salvarNomesAtuais() {
+        listaNomes = listaNomes.map((_, i) => {
+            const input = document.getElementById(`input-${i}`);
+            return input ? input.value.trim() : `Item ${i+1}`;
+        });
+    }
+
+    function atualizarRoleta() {
+        const roleta = document.getElementById('roleta');
+        const qtdParticipantes = document.getElementById('qtdParticipantes');
+        
+        salvarNomesAtuais();
+        
+        let ativosAtuais = [];
+        listaNomes.forEach((nome, index) => {
+            if (!indicesEliminados.includes(index)) {
+                ativosAtuais.push({ nome: nome, idOriginal: index });
+            }
+        });
+
+        qtdParticipantes.innerText = `Participantes (${ativosAtuais.length})`;
+
+        if (rodadaAtual >= ordemDosVencedores.length || ativosAtuais.length === 0) {
+            roleta.innerHTML = "<div style='text-align:center; padding-top:45%; font-weight:bold; color:#2f3542;'>FIM DO JOGO!</div>";
+            roleta.style.background = "#ced6e0";
+            document.getElementById('btnGirar').disabled = true;
+            return;
+        }
+
+        const tamanhoFatia = 360 / ativosAtuais.length;
+        let conicGradientString = "";
+        let fatiasHTML = "";
+
+        ativosAtuais.forEach((item, i) => {
+            const inicioGrau = i * tamanhoFatia;
+            const fimGrau = (i + 1) * tamanhoFatia;
+            const cor = coresfatias[item.idOriginal % coresfatias.length];
+
+            conicGradientString += `${cor} ${inicioGrau}deg ${fimGrau}deg${i === ativosAtuais.length - 1 ? '' : ', '}`;
+
+            const anguloTexto = inicioGrau + (tamanhoFatia / 2);
+            fatiasHTML += `<div class="fatia" style="transform: rotate(${anguloTexto}deg);"><span>${item.nome}</span></div>`;
+        });
+
+        roleta.style.background = `conic-gradient(${conicGradientString})`;
+        roleta.innerHTML = fatiasHTML;
+    }
+
+    function girarRoleta() {
+        const btn = document.getElementById('btnGirar');
+        const roleta = document.getElementById('roleta');
+        const txtResultado = document.getElementById('resultado');
+        
+        bloquearInterface(true);
+
+        const indiceDoVencedor = ordemDosVencedores[rodadaAtual];
+        const inputVencedor = document.getElementById(`input-${indiceDoVencedor}`);
+        const vencedor = inputVencedor.value.trim() || `Item ${indiceDoVencedor + 1}`;
+        
+        let ativosAtuais = [];
+        listaNomes.forEach((nome, index) => {
+            if (!indicesEliminados.includes(index)) {
+                ativosAtuais.push({ nome: nome, idOriginal: index });
+            }
+        });
+
+        const posicaoVisualDoVencedor = ativosAtuais.findIndex(item => item.idOriginal === indiceDoVencedor);
+        const tamanhoFatia = 360 / ativosAtuais.length;
+        const anguloVencedor = (posicaoVisualDoVencedor * tamanhoFatia) + (tamanhoFatia / 2);
+
+        txtResultado.innerText = "Girando...";
+        voltasCompletas += 5;
+        const grausParaGirar = (voltasCompletas * 360) - anguloVencedor;
+
+        roleta.style.transform = `rotate(${grausParaGirar}deg)`;
+
+        setTimeout(() => {
+            txtResultado.innerText = `Resultado: ${vencedor.toUpperCase()}!`;
+            
+            const containerVencedor = document.getElementById(`container-${indiceDoVencedor}`);
+            if (containerVencedor) containerVencedor.classList.add('eliminado');
+            
+            indicesEliminados.push(indiceDoVencedor);
+            rodadaAtual++;
+
+            setTimeout(() => {
+                atualizarRoleta(); 
+                bloquearInterface(false);
+                if (rodadaAtual < ordemDosVencedores.length) {
+                    btn.disabled = false;
+                }
+            }, 1500);
+
+        }, 4000); 
+    }
+
+    // 🔄 LÓGICA DO RESET DO JOGO
+    function resetarJogo() {
+        // 1. Zera o controle de rodadas e limpa os eliminados
+        rodadaAtual = 0;
+        indicesEliminados = [];
+        voltasCompletas = 0;
+
+        // 2. Reseta a rotação visual da roleta física de volta pro zero
+        const roleta = document.getElementById('roleta');
+        roleta.style.transition = 'none'; // Desliga a animação temporariamente para voltar rápido
+        roleta.style.transform = 'rotate(0deg)';
+        
+        // Força o navegador a entender o reset de rotação antes de ligar a animação de novo
+        setTimeout(() => {
+            roleta.style.transition = 'transform 4s cubic-bezier(0.1, 0.8, 0.1, 1)';
+        }, 50);
+
+        // 3. Limpa o texto de resultado da tela
+        document.getElementById('resultado').innerText = "";
+
+        // 4. Remove o estilo de riscado de todas as caixas laterais
+        for (let i = 0; i < listaNomes.length; i++) {
+            const container = document.getElementById(`container-${i}`);
+            if (container) container.classList.remove('eliminado');
+        }
+
+        // 5. Destrava tudo e reconstrói as fatias
+        bloquearInterface(false);
+        atualizarRoleta();
+    }
+
+    function bloquearInterface(status) {
+        document.getElementById('btnGirar').disabled = status;
+        document.getElementById('btnAdd').disabled = status;
+        document.getElementById('btnReset').disabled = status; // Bloqueia o reset enquanto gira
+        
+        for (let i = 0; i < listaNomes.length; i++) {
+            const input = document.getElementById(`input-${i}`);
+            if (input) input.disabled = status;
+            
+            const item = document.getElementById(`container-${i}`);
+            const btnExcluir = item ? item.querySelector('.btn-remover') : null;
+            if (btnExcluir) btnExcluir.style.display = status ? 'none' : 'inline-block';
+        }
+    }
+</script>
+
+</body>
+</html>
